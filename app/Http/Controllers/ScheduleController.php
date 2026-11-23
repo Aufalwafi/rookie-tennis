@@ -9,6 +9,10 @@ class ScheduleController extends Controller
 {
     public function update(Request $request, $id)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat mengubah jadwal pertandingan.');
+        }
+
         $match = TennisMatch::findOrFail($id);
 
         $validated = $request->validate([

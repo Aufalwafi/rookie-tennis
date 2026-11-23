@@ -28,17 +28,45 @@
                     Buat turnamen, kelola pendaftaran peserta, undi pembagian grup, atur jadwal lapangan, catat hasil game & set, serta pantau klasemen dan bracket knockout yang terbarukan otomatis.
                 </p>
 
-                <!-- Action CTA Buttons -->
+                <!-- Action CTA Buttons Tailored to User / Admin / Guest -->
                 <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
-                    <button onclick="openModal('modalCreateTournament')" class="btn btn-p">
-                        + Buat Turnamen
-                    </button>
-                    <a class="btn btn-o" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'tournaments']) }}">
-                        Lihat Turnamen
-                    </a>
-                    <a class="btn btn-o" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'bracket']) }}">
-                        Bagan Knockout
-                    </a>
+                    @if(auth()->check() && auth()->user()->isAdmin())
+                        <button onclick="openModal('modalCreateTournament')" class="btn btn-p">
+                            + Buat Turnamen Baru
+                        </button>
+                        <a class="btn btn-o" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'schedule']) }}">
+                            ⚙️ Kelola Jadwal & Skor
+                        </a>
+                        <a class="btn btn-o" href="{{ route('tournaments.report', $activeTournament->id) }}" target="_blank">
+                            📄 Cetak Laporan PDF
+                        </a>
+                    @elseif(auth()->check())
+                        @if(isset($userParticipant) && $userParticipant)
+                            <a class="btn btn-p" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'schedule']) }}">
+                                🎾 Jadwal Pertandingan Saya
+                            </a>
+                        @else
+                            <a class="btn btn-p" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'participants']) }}">
+                                🚀 Daftar Ikut Turnamen Ini
+                            </a>
+                        @endif
+                        <a class="btn btn-o" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'bracket']) }}">
+                            Bagan Turnamen
+                        </a>
+                        <a class="btn btn-o" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'group']) }}">
+                            Klasemen Grup
+                        </a>
+                    @else
+                        <a class="btn btn-p" href="{{ route('register') }}">
+                            Daftar Akun Peserta
+                        </a>
+                        <a class="btn btn-o" href="{{ route('login') }}">
+                            Masuk
+                        </a>
+                        <a class="btn btn-o" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'tournaments']) }}">
+                            Lihat Semua Turnamen
+                        </a>
+                    @endif
                 </div>
 
                 <!-- Active Tournament Pill -->

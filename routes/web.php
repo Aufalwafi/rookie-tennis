@@ -9,12 +9,13 @@ use App\Http\Controllers\ScoreController;
 use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 
-// Authentication
+// Authentication & Role Switching
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/switch-role', [AuthController::class, 'switchRole'])->name('switch_role');
 
 Route::get('/', [TournamentController::class, 'index'])->name('tournaments.index');
 Route::post('/tournaments', [TournamentController::class, 'store'])->name('tournaments.store');
@@ -25,6 +26,7 @@ Route::post('/tournaments/reset-demo', [TournamentController::class, 'resetDemo'
 
 // Participants
 Route::post('/tournaments/{id}/participants', [ParticipantController::class, 'store'])->name('participants.store');
+Route::post('/tournaments/{id}/participants/self-register', [ParticipantController::class, 'selfRegister'])->name('participants.self_register');
 Route::put('/participants/{id}', [ParticipantController::class, 'update'])->name('participants.update');
 Route::delete('/participants/{id}', [ParticipantController::class, 'destroy'])->name('participants.destroy');
 Route::post('/tournaments/{id}/participants/sample', [ParticipantController::class, 'generateSample'])->name('participants.sample');

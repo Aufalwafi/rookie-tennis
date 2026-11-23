@@ -3,19 +3,27 @@
     $p2Winner = $match->winner_id && $match->winner_id == $match->player2_id;
     $isLive = $match->status === 'live';
     $isCompleted = $match->status === 'completed' || $match->status === 'walkover';
+    $isMyMatch = isset($userParticipant) && $userParticipant && (
+        $match->player1_id === $userParticipant->id || $match->player2_id === $userParticipant->id
+    );
 @endphp
 
 <div class="bracket-card" style="{{ $isLive ? 'border:2px solid #B8442D;' : '' }}min-width:270px">
     
     <!-- Match Card Header -->
     <div class="bracket-card-header">
-        <span style="font-weight:600;color:#0B2E22">{{ $title ?? ($match->court ?: 'Lapangan') }}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-weight:600;color:#0B2E22">{{ $title ?? ($match->court ?: 'Lapangan') }}</span>
+            @if($isMyMatch)
+                <span class="tag" style="background:#D8F24B;color:#0B2E22;font-size:10px;font-weight:700;padding:1px 6px">🌟 Anda</span>
+            @endif
+        </div>
         @if($isLive)
             <span class="tag t-live">Berlangsung</span>
         @elseif($isCompleted)
             <span class="tag t-done">Selesai</span>
         @else
-            <span class="tag t-open">{{ $match->match_time ? \Carbon\Carbon::parse($m->match_time ?? '')->format('H.i') : 'Terjadwal' }}</span>
+            <span class="tag t-open">{{ $match->match_time ? $match->match_time : 'Terjadwal' }}</span>
         @endif
     </div>
 
@@ -72,22 +80,28 @@
         </div>
     </div>
 
-    <!-- Actions Footer -->
+    <!-- Actions Footer (Admin Controls vs Public View) -->
     @if($match->player1_id && $match->player2_id)
         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#FAF8F2;border-top:1px solid #EFECE0">
             <span style="font-size:12px;color:#4A5A52;font-weight:500">
-                {{ $match->court ?: 'Court 1' }}
+                {{ $match->court ?: 'Center Court' }}
             </span>
-            <div style="display:flex;gap:6px">
-                <button type="button" onclick="openLiveUmpireModal({{ $match->id }}, {{ $match->player1_id }}, {{ $match->player2_id }}, '{{ addslashes($match->player1->display_name ?? '') }}', '{{ addslashes($match->player2->display_name ?? '') }}', '{{ addslashes($match->court ?: 'Court') }}')"
-                    class="btn btn-s" style="min-height:30px;padding:0 10px;font-size:11px;border-color:#B8442D;color:#B8442D">
-                    🔴 Live
-                </button>
-                <button type="button" onclick="openScoreModal({{ $match->id }}, {{ $match->player1_id }}, {{ $match->player2_id }}, '{{ addslashes($match->player1->display_name ?? '') }}', '{{ addslashes($match->player2->display_name ?? '') }}', {{ json_encode($match->sets ?? []) }}, '{{ $match->winner_id }}', '{{ $match->status }}', '{{ addslashes($match->notes ?? '') }}')"
-                    class="btn btn-p" style="min-height:30px;padding:0 12px;font-size:12px">
-                    {{ $isCompleted ? 'Ubah' : 'Input' }}
-                </button>
-            </div>
+            @if(auth()->check() && auth()->user()->isAdmin())
+                <div style="display:flex;gap:6px">
+                    <button type="button" onclick="openLiveUmpireModal({{ $match->id }}, {{ $match->player1_id }}, {{ $match->player2_id }}, '{{ addslashes($match->player1->display_name ?? '') }}', '{{ addslashes($match->player2->display_name ?? '') }}', '{{ addslashes($match->court ?: 'Court') }}')"
+                        class="btn btn-s" style="min-height:30px;padding:0 10px;font-size:11px;border-color:#B8442D;color:#B8442D">
+                        🔴 Live
+                    </button>
+                    <button type="button" onclick="openScoreModal({{ $match->id }}, {{ $match->player1_id }}, {{ $match->player2_id }}, '{{ addslashes($match->player1->display_name ?? '') }}', '{{ addslashes($match->player2->display_name ?? '') }}', {{ json_encode($match->sets ?? []) }}, '{{ $match->winner_id }}', '{{ $match->status }}', '{{ addslashes($match->notes ?? '') }}')"
+                        class="btn btn-p" style="min-height:30px;padding:0 12px;font-size:12px">
+                        {{ $isCompleted ? 'Ubah' : 'Input' }}
+                    </button>
+                </div>
+            @else
+                <span style="font-size:11px;color:#4A5A52;font-weight:600">
+                    {{ $isCompleted ? '✓ Resmi Selesai' : ($isLive ? '🔴 Sedang Tanding' : 'Menunggu Jadwal') }}
+                </span>
+            @endif
         </div>
     @endif
 </div>

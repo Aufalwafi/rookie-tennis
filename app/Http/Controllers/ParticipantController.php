@@ -50,6 +50,10 @@ class ParticipantController extends Controller
 
     public function destroy($id)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat menghapus peserta.');
+        }
+
         $participant = Participant::findOrFail($id);
         $tournamentId = $participant->tournament_id;
         $participant->delete();
@@ -58,8 +62,55 @@ class ParticipantController extends Controller
             ->with('success', 'Peserta berhasil dihapus.');
     }
 
+    public function selfRegister(Request $request, $tournamentId)
+    {
+        $tournament = Tournament::findOrFail($tournamentId);
+        $user = auth()->user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan masuk terlebih dahulu untuk mendaftar turnamen.');
+        }
+
+        // Check if already registered
+        $existing = $tournament->participants->first(function ($p) use ($user) {
+            return strtolower(trim($p->name)) === strtolower(trim($user->name))
+                || (!empty($p->phone) && !empty($user->phone) && trim($p->phone) === trim($user->phone));
+        });
+
+        if ($existing) {
+            return back()->with('error', "Anda sudah terdaftar dalam turnamen ini sebagai '{$existing->name}'.");
+        }
+
+        if ($tournament->participants()->count() >= 32) {
+            return back()->with('error', 'Maaf, kuota turnamen ini sudah penuh (maksimal 32 peserta).');
+        }
+
+        $validated = $request->validate([
+            'partner_name' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+        ]);
+
+        $tournament->participants()->create([
+            'name' => $user->name,
+            'partner_name' => $validated['partner_name'] ?? null,
+            'club' => $validated['club'] ?: 'Independen',
+            'city' => $validated['city'] ?: 'Jakarta',
+            'phone' => $user->phone ?: '081234567890',
+            'seed' => null,
+            'ranking' => null,
+        ]);
+
+        return redirect()->route('tournaments.index', ['tournament' => $tournamentId, 'tab' => 'participants'])
+            ->with('success', "Selamat {$user->name}! Anda berhasil mendaftar di turnamen {$tournament->name}.");
+    }
+
     public function generateSample(Request $request, $tournamentId)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat menggunakan fitur isi otomatis.');
+        }
+
         $tournament = Tournament::findOrFail($tournamentId);
         $count = (int)$request->input('count', 8);
 

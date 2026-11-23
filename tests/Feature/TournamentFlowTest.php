@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Tournament;
 use App\Models\Participant;
 use App\Models\TennisMatch;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -31,7 +32,10 @@ class TournamentFlowTest extends TestCase
 
     public function test_tournament_creation(): void
     {
-        $response = $this->post('/tournaments', [
+        $this->seed();
+        $admin = User::where('role', 'admin')->first();
+
+        $response = $this->actingAs($admin)->post('/tournaments', [
             'name' => 'Surabaya Masters 2026',
             'category' => 'mens_singles',
             'surface' => 'Hard Court',
@@ -47,10 +51,11 @@ class TournamentFlowTest extends TestCase
     public function test_tournament_deletion(): void
     {
         $this->seed();
+        $admin = User::where('role', 'admin')->first();
         $tournament = Tournament::first();
         $id = $tournament->id;
 
-        $response = $this->delete("/tournaments/{$id}");
+        $response = $this->actingAs($admin)->delete("/tournaments/{$id}");
         $response->assertRedirect('/');
         $this->assertDatabaseMissing('tournaments', ['id' => $id]);
     }
@@ -105,5 +110,44 @@ class TournamentFlowTest extends TestCase
             'email' => 'budi@example.com',
             'role' => 'user',
         ]);
+    }
+
+    public function test_participant_self_registration(): void
+    {
+        $this->seed();
+        $user = User::where('role', 'user')->first();
+        $tournament = Tournament::first();
+
+        // Ensure user is not already registered
+        $tournament->participants()->where('name', $user->name)->delete();
+
+        $response = $this->actingAs($user)->post("/tournaments/{$tournament->id}/participants/self-register", [
+            'club' => 'Bandung Smashers',
+            'city' => 'Bandung',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('participants', [
+            'tournament_id' => $tournament->id,
+            'name' => $user->name,
+            'club' => 'Bandung Smashers',
+        ]);
+    }
+
+    public function test_role_switch(): void
+    {
+        $this->seed();
+
+        $responseAdmin = $this->post('/switch-role', ['role' => 'admin']);
+        $responseAdmin->assertRedirect();
+        $this->assertEquals('admin', auth()->user()->role);
+
+        $responseUser = $this->post('/switch-role', ['role' => 'user']);
+        $responseUser->assertRedirect();
+        $this->assertEquals('user', auth()->user()->role);
+
+        $responseGuest = $this->post('/switch-role', ['role' => 'guest']);
+        $responseGuest->assertRedirect();
+        $this->assertGuest();
     }
 }

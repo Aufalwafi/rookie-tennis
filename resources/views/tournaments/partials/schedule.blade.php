@@ -28,9 +28,14 @@
 
     <!-- Filter & Toolbar (from Jadwal dan Input Hasil.html) -->
     <div style="max-width:1200px;margin:0 auto;padding:36px 24px 0;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px 24px">
-        <!-- Date Chips -->
+        <!-- Date & Personal Chips -->
         <div style="display:flex;flex-wrap:wrap;gap:8px" id="scheduleDateChips">
             <button class="chip chip-on" onclick="filterScheduleByDate('all', this)">Semua tanggal</button>
+            @if(isset($userParticipant) && $userParticipant)
+                <button class="chip" id="myMatchesChip" onclick="toggleMyMatches(this, '{{ strtolower(addslashes($userParticipant->name)) }}')" style="border-color:#0B2E22;font-weight:700">
+                    🎾 Pertandingan Saya
+                </button>
+            @endif
             @foreach($uniqueDates as $d)
                 <button class="chip" onclick="filterScheduleByDate('{{ $d->format('Y-m-d') }}', this)">
                     {{ $d->format('d M') }}
@@ -118,21 +123,30 @@
 
                         <!-- Action Buttons -->
                         <div style="display:flex;align-items:center;gap:8px">
-                            <button onclick="openEditScheduleModal({{ $m->id }}, '{{ $m->match_date ? $m->match_date->format('Y-m-d') : '' }}', '{{ $m->match_time ?: '' }}', '{{ $m->court ?: '' }}')"
-                                class="btn btn-s" style="min-height:36px;padding:0 12px;font-size:13px" title="Atur Jam & Lapangan">
-                                📅 Jam
-                            </button>
-
-                            @if($m->player1_id && $m->player2_id)
-                                <button onclick="openLiveUmpireModal({{ $m->id }}, {{ $m->player1_id }}, {{ $m->player2_id }}, '{{ addslashes($m->player1->display_name ?? '') }}', '{{ addslashes($m->player2->display_name ?? '') }}', '{{ addslashes($m->court ?: 'Court') }}')"
-                                    class="btn btn-s" style="min-height:36px;padding:0 12px;font-size:13px;border-color:#B8442D;color:#B8442D" title="Wasit Lapangan Langsung">
-                                    🔴 Live
+                            @if(auth()->check() && auth()->user()->isAdmin())
+                                <button onclick="openEditScheduleModal({{ $m->id }}, '{{ $m->match_date ? $m->match_date->format('Y-m-d') : '' }}', '{{ $m->match_time ?: '' }}', '{{ $m->court ?: '' }}')"
+                                    class="btn btn-s" style="min-height:36px;padding:0 12px;font-size:13px" title="Atur Jam & Lapangan">
+                                    📅 Jam
                                 </button>
 
-                                <button onclick="openScoreModal({{ $m->id }}, {{ $m->player1_id }}, {{ $m->player2_id }}, '{{ addslashes($m->player1->display_name ?? '') }}', '{{ addslashes($m->player2->display_name ?? '') }}', {{ json_encode($m->sets ?? []) }}, '{{ $m->winner_id }}', '{{ $m->status }}', '{{ addslashes($m->notes ?? '') }}')"
-                                    class="btn {{ $isLive ? 'btn-d' : 'btn-s' }}" style="min-height:36px;padding:0 14px;font-size:13px">
-                                    {{ $isCompleted ? 'Ubah hasil' : 'Input hasil' }}
-                                </button>
+                                @if($m->player1_id && $m->player2_id)
+                                    <button onclick="openLiveUmpireModal({{ $m->id }}, {{ $m->player1_id }}, {{ $m->player2_id }}, '{{ addslashes($m->player1->display_name ?? '') }}', '{{ addslashes($m->player2->display_name ?? '') }}', '{{ addslashes($m->court ?: 'Court') }}')"
+                                        class="btn btn-s" style="min-height:36px;padding:0 12px;font-size:13px;border-color:#B8442D;color:#B8442D" title="Wasit Lapangan Langsung">
+                                        🔴 Live
+                                    </button>
+
+                                    <button onclick="openScoreModal({{ $m->id }}, {{ $m->player1_id }}, {{ $m->player2_id }}, '{{ addslashes($m->player1->display_name ?? '') }}', '{{ addslashes($m->player2->display_name ?? '') }}', {{ json_encode($m->sets ?? []) }}, '{{ $m->winner_id }}', '{{ $m->status }}', '{{ addslashes($m->notes ?? '') }}')"
+                                        class="btn {{ $isLive ? 'btn-d' : 'btn-s' }}" style="min-height:36px;padding:0 14px;font-size:13px">
+                                        {{ $isCompleted ? 'Ubah hasil' : 'Input hasil' }}
+                                    </button>
+                                @endif
+                            @else
+                                @if(isset($userParticipant) && $userParticipant && ($m->player1_id == $userParticipant->id || $m->player2_id == $userParticipant->id))
+                                    <span class="tag" style="background:#D8F24B;color:#0B2E22;font-size:11px;font-weight:700">🌟 Laga Anda</span>
+                                @endif
+                                <span class="tag {{ $isLive ? 't-live' : ($isCompleted ? 't-done' : 't-open') }}" style="font-size:11px">
+                                    {{ $isLive ? '🔴 Live' : ($isCompleted ? 'Selesai' : 'Terjadwal') }}
+                                </span>
                             @endif
                         </div>
                     </div>
@@ -171,6 +185,19 @@
 
 <script>
     let currentScheduleDate = 'all';
+    let filterOnlyMine = false;
+    let myNameFilter = '';
+
+    function toggleMyMatches(btn, name) {
+        filterOnlyMine = !filterOnlyMine;
+        myNameFilter = name;
+        if (filterOnlyMine) {
+            btn.classList.add('chip-on');
+        } else {
+            btn.classList.remove('chip-on');
+        }
+        applyScheduleFilters();
+    }
 
     function filterScheduleByDate(date, btn) {
         currentScheduleDate = date;
@@ -191,8 +218,9 @@
             const dateMatch = (currentScheduleDate === 'all' || rowDate === currentScheduleDate);
             const courtMatch = (court === 'all' || rowCourt === court);
             const stageMatch = (stage === 'all' || rowStage === stage);
+            const mineMatch = !filterOnlyMine || row.innerText.toLowerCase().includes(myNameFilter);
 
-            row.style.display = (dateMatch && courtMatch && stageMatch) ? 'flex' : 'none';
+            row.style.display = (dateMatch && courtMatch && stageMatch && mineMatch) ? 'flex' : 'none';
         });
     }
 </script>

@@ -17,6 +17,10 @@ class ScoreController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat mencatat atau mengubah skor pertandingan.');
+        }
+
         $match = TennisMatch::findOrFail($id);
 
         $isWalkover = $request->has('is_walkover');
@@ -84,6 +88,10 @@ class ScoreController extends Controller
 
     public function liveUmpire(Request $request, $id)
     {
+        if (!$this->checkAdmin()) {
+            return response()->json(['error' => 'Hanya Penyelenggara yang dapat mengoperasikan Live Umpire.'], 403);
+        }
+
         $match = TennisMatch::findOrFail($id);
 
         $winnerId = $request->input('winner_id');

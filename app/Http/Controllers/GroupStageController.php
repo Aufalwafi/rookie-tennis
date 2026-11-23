@@ -17,6 +17,10 @@ class GroupStageController extends Controller
 
     public function draw($tournamentId)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat mengundi pembagian grup.');
+        }
+
         $tournament = Tournament::findOrFail($tournamentId);
         
         if ($tournament->participants->count() < 2) {
@@ -31,8 +35,12 @@ class GroupStageController extends Controller
 
     public function generateMatches($tournamentId)
     {
-        $tournament = Tournament::findOrFail($tournamentId);
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat membuat jadwal pertandingan grup.');
+        }
 
+        $tournament = Tournament::findOrFail($tournamentId);
+        
         if ($tournament->groups->isEmpty()) {
             return back()->with('error', 'Silakan undi grup terlebih dahulu.');
         }
@@ -45,6 +53,10 @@ class GroupStageController extends Controller
 
     public function advanceToKnockout($tournamentId)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat meloloskan peserta ke babak knockout.');
+        }
+
         $tournament = Tournament::findOrFail($tournamentId);
         $this->tennisService->generateKnockoutFromGroups($tournament);
 

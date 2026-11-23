@@ -328,6 +328,53 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-[#D8F24B] selection:text-[#0B2E22]">
 
+    <!-- Quick Role Switcher Bar (For testing & seamless Admin / User evaluation) -->
+    <div class="no-print" style="background:#072118;border-bottom:1px solid rgba(255,255,255,0.1);padding:6px 24px;font-size:12px;color:#DCE8DF">
+        <div style="max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-weight:700;color:#D8F24B">Simulasi Akses Peran:</span>
+                @if(auth()->check())
+                    @if(auth()->user()->isAdmin())
+                        <span style="background:#D8F24B;color:#0B2E22;padding:1px 8px;border-radius:999px;font-weight:700;font-size:11px">👑 Penyelenggara (Admin)</span>
+                        <span style="color:#8A9990;font-size:11px" class="hidden sm:inline">— Hak akses penuh: Buat turnamen, undi bagan, atur jadwal & skor</span>
+                    @else
+                        <span style="background:rgba(255,255,255,0.2);color:#FFFFFF;padding:1px 8px;border-radius:999px;font-weight:700;font-size:11px">🎾 Peserta (User)</span>
+                        <span style="color:#8A9990;font-size:11px" class="hidden sm:inline">— Hak akses: Mendaftar turnamen & melihat jadwal pribadi</span>
+                    @endif
+                @else
+                    <span style="background:rgba(255,255,255,0.1);color:#DCE8DF;padding:1px 8px;border-radius:999px;font-weight:600;font-size:11px">👁️ Publik (Tamu)</span>
+                    <span style="color:#8A9990;font-size:11px" class="hidden sm:inline">— Mode umum tanpa login</span>
+                @endif
+            </div>
+
+            <!-- Fast Role Toggle Forms -->
+            <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:11px;color:#8A9990">Ganti Mode:</span>
+                <form action="{{ route('switch_role') }}" method="POST" style="margin:0;display:inline">
+                    @csrf
+                    <input type="hidden" name="role" value="admin">
+                    <button type="submit" style="background:{{ auth()->check() && auth()->user()->isAdmin() ? '#D8F24B' : 'rgba(255,255,255,0.1)' }};color:{{ auth()->check() && auth()->user()->isAdmin() ? '#0B2E22' : '#F6F3EA' }};border:none;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">
+                        👑 Admin
+                    </button>
+                </form>
+                <form action="{{ route('switch_role') }}" method="POST" style="margin:0;display:inline">
+                    @csrf
+                    <input type="hidden" name="role" value="user">
+                    <button type="submit" style="background:{{ auth()->check() && !auth()->user()->isAdmin() ? '#D8F24B' : 'rgba(255,255,255,0.1)' }};color:{{ auth()->check() && !auth()->user()->isAdmin() ? '#0B2E22' : '#F6F3EA' }};border:none;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">
+                        🎾 Peserta
+                    </button>
+                </form>
+                <form action="{{ route('switch_role') }}" method="POST" style="margin:0;display:inline">
+                    @csrf
+                    <input type="hidden" name="role" value="guest">
+                    <button type="submit" style="background:{{ !auth()->check() ? '#D8F24B' : 'rgba(255,255,255,0.1)' }};color:{{ !auth()->check() ? '#0B2E22' : '#F6F3EA' }};border:none;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">
+                        👁️ Tamu
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Navigation Bar (Rookie Tennis Header) -->
     <header class="no-print sticky top-0 z-50 shadow-md" style="background:#0B2E22">
         <div style="max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px">

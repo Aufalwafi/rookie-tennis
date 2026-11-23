@@ -88,4 +88,27 @@ class AuthController extends Controller
         return redirect()->route('tournaments.index')
             ->with('success', 'Anda telah berhasil keluar (logout).');
     }
+
+    public function switchRole(Request $request)
+    {
+        $role = $request->input('role');
+        if ($role === 'admin') {
+            $user = User::where('role', 'admin')->first();
+            if ($user) {
+                Auth::login($user);
+                return back()->with('success', 'Mode diubah ke: 👑 Penyelenggara (Admin) — Hak akses penuh membuat & mengelola turnamen.');
+            }
+        } elseif ($role === 'user') {
+            $user = User::where('role', 'user')->first();
+            if ($user) {
+                Auth::login($user);
+                return back()->with('success', 'Mode diubah ke: 🎾 Peserta (' . $user->name . ') — Siap mendaftar turnamen & melihat jadwal pribadi.');
+            }
+        } else {
+            Auth::logout();
+            return back()->with('success', 'Mode diubah ke: 👁️ Publik (Tamu) — Tampilan umum turnamen.');
+        }
+
+        return back();
+    }
 }

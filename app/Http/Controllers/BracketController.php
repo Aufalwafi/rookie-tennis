@@ -17,6 +17,10 @@ class BracketController extends Controller
 
     public function generate($tournamentId)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara yang dapat mengundi bagan knockout.');
+        }
+
         $tournament = Tournament::findOrFail($tournamentId);
 
         if ($tournament->participants->count() < 2) {

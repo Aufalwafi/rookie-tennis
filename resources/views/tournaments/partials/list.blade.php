@@ -9,9 +9,15 @@
                 <h1 style="font-size:clamp(36px,5vw,56px);line-height:1.05;font-weight:700">Turnamen</h1>
                 <p style="font-size:18px;color:#DCE8DF">Pilih turnamen untuk didaftari atau pantau jalannya pertandingan.</p>
             </div>
-            <button onclick="openModal('modalCreateTournament')" class="btn btn-p">
-                + Buat Turnamen Baru
-            </button>
+            @if(auth()->check() && auth()->user()->isAdmin())
+                <button onclick="openModal('modalCreateTournament')" class="btn btn-p">
+                    + Buat Turnamen Baru
+                </button>
+            @else
+                <a class="btn btn-p" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'participants']) }}">
+                    🎾 Daftar Turnamen Ini
+                </a>
+            @endif
         </div>
     </div>
 
@@ -81,13 +87,15 @@
                     <a class="btn btn-d" href="{{ route('tournaments.index', ['tournament' => $t->id, 'tab' => 'bracket']) }}" style="flex:1;min-height:44px;font-size:14px">
                         Buka Turnamen
                     </a>
-                    <form action="{{ route('tournaments.destroy', $t->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus turnamen \'{{ addslashes($t->name) }}\'? Seluruh data bagan, jadwal, dan pesertanya akan ikut terhapus permanen.');" style="margin:0">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-s" title="Hapus Turnamen Ini" style="min-height:44px;padding:0 14px;border-color:#E3DFD0;color:#B8442D" onmouseover="this.style.background='#FEE2E2';this.style.borderColor='#EF4444'" onmouseout="this.style.background='';this.style.borderColor='#E3DFD0'">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </form>
+                    @if(auth()->check() && auth()->user()->isAdmin())
+                        <form action="{{ route('tournaments.destroy', $t->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus turnamen \'{{ addslashes($t->name) }}\'? Seluruh data bagan, jadwal, dan pesertanya akan ikut terhapus permanen.');" style="margin:0">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-s" title="Hapus Turnamen Ini" style="min-height:44px;padding:0 14px;border-color:#E3DFD0;color:#B8442D" onmouseover="this.style.background='#FEE2E2';this.style.borderColor='#EF4444'" onmouseout="this.style.background='';this.style.borderColor='#E3DFD0'">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </form>
+                    @endif
                     @if($activeTournament->id == $t->id)
                         <span class="tag t-open" style="font-size:11px">Aktif</span>
                     @endif

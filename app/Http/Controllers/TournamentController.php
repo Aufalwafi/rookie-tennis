@@ -38,11 +38,23 @@ class TournamentController extends Controller
 
         $activeTab = $request->query('tab', 'home');
 
-        return view('tournaments.show', compact('tournaments', 'activeTournament', 'groupStandings', 'activeTab'));
+        $userParticipant = null;
+        if (auth()->check()) {
+            $user = auth()->user();
+            $userParticipant = $activeTournament->participants->first(function ($p) use ($user) {
+                return strtolower(trim($p->name)) === strtolower(trim($user->name))
+                    || (!empty($p->phone) && !empty($user->phone) && trim($p->phone) === trim($user->phone));
+            });
+        }
+
+        return view('tournaments.show', compact('tournaments', 'activeTournament', 'groupStandings', 'activeTab', 'userParticipant'));
     }
 
     public function store(Request $request)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara (Admin) yang dapat membuat turnamen baru.');
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -86,6 +98,10 @@ class TournamentController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara (Admin) yang dapat mengubah turnamen.');
+        }
+
         $tournament = Tournament::findOrFail($id);
 
         $validated = $request->validate([
@@ -128,6 +144,10 @@ class TournamentController extends Controller
 
     public function destroy($id)
     {
+        if (!$this->checkAdmin()) {
+            return back()->with('error', 'Hanya Penyelenggara (Admin) yang dapat menghapus turnamen.');
+        }
+
         $tournament = Tournament::findOrFail($id);
         $name = $tournament->name;
         $tournament->delete();

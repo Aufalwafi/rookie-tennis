@@ -10,29 +10,38 @@
                 </p>
             </div>
 
-            <!-- Group Management Buttons -->
+            <!-- Group Management Buttons (Admin vs Participant) -->
             <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
-                <form action="{{ route('groups.draw', $activeTournament->id) }}" method="POST" onsubmit="return confirm('Undi ulang pembagian grup?')">
-                    @csrf
-                    <button type="submit" class="btn btn-l">
-                        Undi ulang grup
-                    </button>
-                </form>
-
-                <form action="{{ route('groups.matches', $activeTournament->id) }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-l">
-                        Generate jadwal grup
-                    </button>
-                </form>
-
-                @if($activeTournament->format === 'group_knockout')
-                    <form action="{{ route('groups.advance', $activeTournament->id) }}" method="POST" onsubmit="return confirm('Loloskan juara & runner-up grup ke bagan knockout?')">
+                @if(auth()->check() && auth()->user()->isAdmin())
+                    <form action="{{ route('groups.draw', $activeTournament->id) }}" method="POST" onsubmit="return confirm('Undi ulang pembagian grup?')">
                         @csrf
-                        <button type="submit" class="btn btn-p">
-                            Loloskan ke knockout →
+                        <button type="submit" class="btn btn-l">
+                            Undi ulang grup
                         </button>
                     </form>
+
+                    <form action="{{ route('groups.matches', $activeTournament->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="btn btn-l">
+                            Generate jadwal grup
+                        </button>
+                    </form>
+
+                    @if($activeTournament->format === 'group_knockout')
+                        <form action="{{ route('groups.advance', $activeTournament->id) }}" method="POST" onsubmit="return confirm('Loloskan juara & runner-up grup ke bagan knockout?')">
+                            @csrf
+                            <button type="submit" class="btn btn-p">
+                                Loloskan ke knockout →
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <a class="btn btn-p" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'schedule']) }}">
+                        Lihat Jadwal Pertandingan
+                    </a>
+                    <a class="btn btn-l" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'bracket']) }}">
+                        Bagan Knockout
+                    </a>
                 @endif
             </div>
         </div>
@@ -110,8 +119,11 @@
                                                     @if($row['participant']->seed)
                                                         <span class="tag" style="background:#0B2E22;color:#D8F24B;padding:2px 7px;font-size:11px">#{{ $row['participant']->seed }}</span>
                                                     @endif
-                                                    <span style="font-weight:{{ $row['is_qualified'] ? '700' : '600' }};color:#0B2E22">
-                                                        {{ $row['participant']->display_name }}
+                                                    <span style="font-weight:{{ $row['is_qualified'] ? '700' : '600' }};color:#0B2E22;display:flex;align-items:center;gap:6px">
+                                                        <span>{{ $row['participant']->display_name }}</span>
+                                                        @if(isset($userParticipant) && $userParticipant && $userParticipant->id === $row['participant']->id)
+                                                            <span class="tag" style="background:#D8F24B;color:#0B2E22;font-size:10px;padding:1px 6px;font-weight:700">🌟 Anda</span>
+                                                        @endif
                                                     </span>
                                                 </div>
                                                 @if($row['participant']->club)

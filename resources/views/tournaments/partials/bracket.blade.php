@@ -35,14 +35,16 @@
                     Lihat klasemen grup
                 </a>
                 <a class="btn btn-p" href="{{ route('tournaments.index', ['tournament' => $activeTournament->id, 'tab' => 'schedule']) }}">
-                    Jadwal &amp; input hasil
+                    Jadwal Pertandingan
                 </a>
-                <form action="{{ route('bracket.generate', $activeTournament->id) }}" method="POST" class="inline" onsubmit="return confirm('Generate ulang bagan sistem gugur?')">
-                    @csrf
-                    <button type="submit" class="btn btn-o" style="min-height:48px;padding:0 18px" title="Generate / Reset Bagan">
-                        ↻ Undi Bagan
-                    </button>
-                </form>
+                @if(auth()->check() && auth()->user()->isAdmin())
+                    <form action="{{ route('bracket.generate', $activeTournament->id) }}" method="POST" class="inline" onsubmit="return confirm('Generate ulang bagan sistem gugur?')">
+                        @csrf
+                        <button type="submit" class="btn btn-o" style="min-height:48px;padding:0 18px" title="Generate / Reset Bagan (Khusus Admin)">
+                            ↻ Undi Bagan
+                        </button>
+                    </form>
+                @endif
             </div>
         </div>
     </div>
