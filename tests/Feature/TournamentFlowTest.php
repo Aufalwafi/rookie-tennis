@@ -54,4 +54,56 @@ class TournamentFlowTest extends TestCase
         $response->assertRedirect('/');
         $this->assertDatabaseMissing('tournaments', ['id' => $id]);
     }
+
+    public function test_login_page_renders_successfully(): void
+    {
+        $response = $this->get('/login');
+        $response->assertStatus(200);
+        $response->assertSee('Selamat datang kembali');
+        $response->assertSee('admin@rookietennis.com');
+    }
+
+    public function test_register_page_renders_successfully(): void
+    {
+        $response = $this->get('/register');
+        $response->assertStatus(200);
+        $response->assertSee('Satu akun, dua peran');
+        $response->assertSee('Penyelenggara');
+        $response->assertSee('Peserta');
+    }
+
+    public function test_user_can_login_and_logout(): void
+    {
+        $this->seed();
+
+        $response = $this->post('/login', [
+            'email' => 'admin@rookietennis.com',
+            'password' => 'admin123',
+        ]);
+        $response->assertRedirect('/');
+        $this->assertAuthenticated();
+
+        $logoutResponse = $this->post('/logout');
+        $logoutResponse->assertRedirect('/');
+        $this->assertGuest();
+    }
+
+    public function test_user_can_register_with_role(): void
+    {
+        $response = $this->post('/register', [
+            'name' => 'Budi Santoso',
+            'email' => 'budi@example.com',
+            'role' => 'user',
+            'phone' => '081299998888',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertRedirect('/');
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'email' => 'budi@example.com',
+            'role' => 'user',
+        ]);
+    }
 }

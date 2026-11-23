@@ -6,20 +6,40 @@ use App\Models\Participant;
 use App\Models\TennisMatch;
 use App\Models\Tournament;
 use App\Models\TournamentGroup;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
         // Clean existing tables
+        DB::table('users')->delete();
         DB::table('tennis_matches')->delete();
         DB::table('group_participant')->delete();
         DB::table('tournament_groups')->delete();
         DB::table('participants')->delete();
         DB::table('tournaments')->delete();
+
+        // 0. Seed Demo Accounts
+        User::create([
+            'name' => 'Admin Rookie Tennis',
+            'email' => 'admin@rookietennis.com',
+            'role' => 'admin',
+            'phone' => '081234567890',
+            'password' => Hash::make('admin123'),
+        ]);
+
+        User::create([
+            'name' => 'Raka Pratama',
+            'email' => 'peserta@rookietennis.com',
+            'role' => 'user',
+            'phone' => '089876543210',
+            'password' => Hash::make('user123'),
+        ]);
 
         // 1. Jakarta Open Tennis Championship 2026
         $t1 = Tournament::create([

@@ -278,6 +278,42 @@
             font-weight: 700;
         }
 
+        .opt {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 16px;
+            border: 1.5px solid #8C8A78;
+            border-radius: 14px;
+            background: #fff;
+            flex: 1 1 180px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .opt:hover {
+            border-color: #0B2E22;
+        }
+        .opt-on {
+            border: 2px solid #0B2E22 !important;
+            background: #F1F9C9 !important;
+        }
+        .ck {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            line-height: 1.5;
+            color: #DCE8DF;
+            font-size: 14px;
+        }
+        .ck b {
+            flex: none;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #D8F24B;
+            margin-top: 7px;
+        }
+
         /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #EFECE0; }
@@ -323,7 +359,7 @@
                 <a class="nl {{ $curTab === 'schedule' ? 'on' : '' }}" href="{{ route('tournaments.index', array_filter(['tournament' => $tId, 'tab' => 'schedule'])) }}">Jadwal</a>
             </nav>
 
-            <!-- Right Controls: Tournament Selector, Settings & Create Button -->
+            <!-- Right Controls: Tournament Selector, Settings, Auth & Action Buttons -->
             <div style="display:flex;align-items:center;gap:10px">
                 @if(isset($tournaments) && $tournaments->isNotEmpty())
                     <div class="relative">
@@ -332,23 +368,51 @@
                             class="hover:bg-[#1B6149] transition-colors appearance-none">
                             @foreach($tournaments as $t)
                                 <option value="{{ $t->id }}" {{ (isset($activeTournament) && $activeTournament->id == $t->id) ? 'selected' : '' }} style="background:#0B2E22;color:#F6F3EA">
-                                    🎾 {{ Str::limit($t->name, 22) }}
+                                    🎾 {{ Str::limit($t->name, 20) }}
                                 </option>
                             @endforeach
                         </select>
                         <svg class="absolute right-3 top-3 w-3.5 h-3.5 text-[#DCE8DF] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
 
-                    @if(isset($activeTournament))
-                        <button type="button" onclick="openModal('modalEditTournament')" class="btn btn-o hover:bg-white/10 hover:text-white" title="Pengaturan & Hapus Turnamen" style="min-height:38px;padding:0 14px;font-size:13px;border-color:rgba(255,255,255,0.25);color:#DCE8DF">
-                            ⚙️ Atur / Hapus
+                    @if(isset($activeTournament) && (!auth()->check() || auth()->user()->isAdmin()))
+                        <button type="button" onclick="openModal('modalEditTournament')" class="btn btn-o hover:bg-white/10 hover:text-white" title="Pengaturan & Hapus Turnamen" style="min-height:38px;padding:0 12px;font-size:13px;border-color:rgba(255,255,255,0.25);color:#DCE8DF">
+                            ⚙️ Atur
                         </button>
                     @endif
                 @endif
 
-                <button onclick="openModal('modalCreateTournament')" class="btn btn-p" style="font-size:14px;min-height:44px;padding:0 20px">
-                    + Buat Turnamen
-                </button>
+                @auth
+                    <!-- User Pill (Admin or Peserta) -->
+                    <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:999px;padding:3px 12px 3px 6px">
+                        @if(auth()->user()->isAdmin())
+                            <span class="tag" style="background:#D8F24B;color:#0B2E22;font-weight:700;font-size:11px;padding:2px 8px;border:none">👑 Admin</span>
+                        @else
+                            <span class="tag" style="background:#14503B;color:#D8F24B;font-weight:700;font-size:11px;padding:2px 8px;border:none">🎾 Peserta</span>
+                        @endif
+                        <span style="font-size:13px;color:#F6F3EA;font-weight:600">{{ Str::limit(auth()->user()->name, 14) }}</span>
+                        <form action="{{ route('logout') }}" method="POST" style="margin:0">
+                            @csrf
+                            <button type="submit" class="hover:text-red-300 text-[#DCE8DF] text-xs font-semibold underline pl-1 cursor-pointer" title="Keluar dari akun">
+                                Keluar
+                            </button>
+                        </form>
+                    </div>
+
+                    @if(auth()->user()->isAdmin())
+                        <button onclick="openModal('modalCreateTournament')" class="btn btn-p" style="font-size:14px;min-height:42px;padding:0 18px">
+                            + Buat Turnamen
+                        </button>
+                    @endif
+                @else
+                    <!-- Guest Authentication Links from TennisChallenge Web Design (1) -->
+                    <a class="nl {{ request()->routeIs('login') ? 'on' : '' }}" href="{{ route('login') }}" style="min-height:40px;font-size:14px">
+                        Masuk
+                    </a>
+                    <a class="btn btn-p" href="{{ route('register') }}" style="font-size:14px;min-height:40px;padding:0 18px">
+                        Daftar
+                    </a>
+                @endauth
             </div>
 
         </div>
